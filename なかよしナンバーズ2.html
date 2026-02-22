@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 なかよしナンバーズ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap');
+
+:root {
+  --cell: 54px;
+  --gap: 4px;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #fff0f8 0%, #f0eaff 30%, #e8f5ff 60%, #f0fff4 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 8px 50px;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ========== ANIMATED ANIMALS (SVG sticker style) ========== */
+.animal-stage {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  overflow: hidden;
+}
+
+.sticker {
+  position: absolute;
+  pointer-events: all;
+  cursor: pointer;
+  user-select: none;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));
+  transition: filter 0.2s;
+}
+.sticker svg { display: block; overflow: visible; }
+.sticker:hover { filter: drop-shadow(0 6px 16px rgba(200,100,200,0.35)); }
+
+/* idle float */
+@keyframes stickerFloat {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  30%      { transform: translateY(-10px) rotate(2deg); }
+  70%      { transform: translateY(-6px) rotate(-2deg); }
+}
+/* excited bounce */
+@keyframes stickerBounce {
+  0%   { transform: scale(1) rotate(0); }
+  20%  { transform: scale(1.35) rotate(-12deg); }
+  50%  { transform: scale(0.9) rotate(8deg) translateY(-14px); }
+  75%  { transform: scale(1.1) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+/* wiggle on hover */
+@keyframes stickerWiggle {
+  0%,100% { transform: rotate(0deg) scale(1.15); }
+  25%      { transform: rotate(-8deg) scale(1.18); }
+  75%      { transform: rotate(8deg) scale(1.18); }
+}
+.sticker.wiggling { animation: stickerWiggle 0.4s ease !important; }
+.sticker.bouncing { animation: stickerBounce 0.55s cubic-bezier(.36,.07,.19,.97) !important; }
+
+/* ========== TITLE ========== */
+.title-wrap { position: relative; z-index: 1; text-align: center; margin-bottom: 12px; }
+h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(24px, 5.5vw, 42px);
+  background: linear-gradient(135deg, #ff5fa0, #b05fff, #5fb0ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(180,80,220,0.18));
+  line-height: 1.1;
+}
+.title-sub { font-size: 12px; color: #c090d8; font-weight: 800; letter-spacing: 1px; margin-top: 2px; }
+
+/* ========== GAME PANEL ========== */
+.game-panel {
+  position: relative; z-index: 1;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(14px);
+  border-radius: 26px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 8px 36px rgba(180,130,220,0.18), 0 0 0 2px rgba(255,255,255,0.9);
+  max-width: 660px; width: 100%;
+}
+
+/* ========== STATS ========== */
+.stats-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; flex-wrap: wrap; justify-content: space-between;
+}
+.pill {
+  display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #fff0f8, #f4eeff);
+  border-radius: 50px; padding: 5px 14px;
+  box-shadow: 0 2px 8px rgba(200,140,220,0.15);
+  border: 2px solid rgba(255,255,255,0.85);
+}
+.pill-icon { font-size: 16px; }
+.pill-texts { display: flex; flex-direction: column; line-height: 1.1; }
+.pill-label { font-size: 9px; font-weight: 900; color: #c08ad8; letter-spacing: 1px; text-transform: uppercase; }
+.pill-val { font-family: 'Fredoka One', cursive; font-size: 19px; color: #9060cc; }
+
+.rules-btn, .reset-btn {
+  font-family: 'Fredoka One', cursive;
+  font-size: 14px; border-radius: 50px; cursor: pointer;
+  padding: 7px 16px; border: 2px solid rgba(255,255,255,0.8);
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s;
+}
+.rules-btn:hover, .reset-btn:hover { transform: scale(1.08) translateY(-2px); }
+.rules-btn {
+  background: linear-gradient(135deg, #ffe0f2, #e8d4ff); color: #aa66cc;
+  box-shadow: 0 3px 10px rgba(200,130,220,0.2);
+}
+.reset-btn {
+  background: linear-gradient(135deg, #d4ecff, #c8e8ff); color: #4488cc;
+  box-shadow: 0 3px 10px rgba(100,160,220,0.2);
+}
+
+/* ========== RULES ========== */
+.rules-panel {
+  background: linear-gradient(135deg, rgba(255,235,248,0.9), rgba(235,225,255,0.9));
+  border-radius: 16px; padding: 12px 16px; margin-bottom: 12px;
+  font-size: 12px; line-height: 2.1; color: #9a77b0; border: 2px solid rgba(255,255,255,0.7);
+  display: none;
+}
+.rules-panel.open { display: block; }
+.rules-panel b { color: #cc55aa; }
+
+/* ========== GRID AREA ========== */
+.grid-scroll { overflow-x: auto; margin-bottom: 12px; border-radius: 16px; }
+
+#gridWrap {
+  display: flex; flex-direction: column;
+  gap: var(--gap);
+  min-width: fit-content;
+  padding: 4px 2px;
+}
+
+.grid-row {
+  display: flex; gap: var(--gap);
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s;
+}
+.grid-row.row-vanish {
+  animation: rowPoof 0.55s cubic-bezier(.36,.07,.19,.97) forwards;
+}
+@keyframes rowPoof {
+  0%   { transform: scale(1) translateX(0); opacity: 1; filter: brightness(1); }
+  30%  { transform: scale(1.04) translateX(0); opacity: 1; filter: brightness(1.6) saturate(2); }
+  60%  { transform: scale(0.95) translateX(6px); opacity: 0.5; }
+  100% { transform: scale(0.6) translateX(0); opacity: 0; filter: brightness(2); }
+}
+
+/* ========== CELLS ========== */
+.cell {
+  width: var(--cell); height: var(--cell);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  font-size: 22px;
+  cursor: pointer; user-select: none;
+  border: 2.5px solid rgba(255,255,255,0.75);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.9) inset;
+  transition: transform 0.13s cubic-bezier(.34,1.56,.64,1), box-shadow 0.13s, filter 0.13s;
+  position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+/* shimmer highlight */
+.cell::after {
+  content: '';
+  position: absolute; top: 2px; left: 8px; right: 8px; height: 35%;
+  background: rgba(255,255,255,0.45);
+  border-radius: 50%; pointer-events: none;
+}
+
+/* per-digit pastel gradients */
+.cell[data-v="1"]{ background: linear-gradient(145deg,#ffc8dd,#ff90b8); color:#c0245e; }
+.cell[data-v="2"]{ background: linear-gradient(145deg,#ffdcb0,#ffb870); color:#b05010; }
+.cell[data-v="3"]{ background: linear-gradient(145deg,#fff4a0,#ffe040); color:#907000; }
+.cell[data-v="4"]{ background: linear-gradient(145deg,#b8f5b8,#70e870); color:#1a801a; }
+.cell[data-v="5"]{ background: linear-gradient(145deg,#a8f0e4,#50dcc4); color:#108870; }
+.cell[data-v="6"]{ background: linear-gradient(145deg,#aadefc,#60c0ff); color:#1060b8; }
+.cell[data-v="7"]{ background: linear-gradient(145deg,#ccc0ff,#9980ff); color:#4020c0; }
+.cell[data-v="8"]{ background: linear-gradient(145deg,#f8b8f0,#f070e0); color:#a01898; }
+.cell[data-v="9"]{ background: linear-gradient(145deg,#ffc8b0,#ff9870); color:#b03010; }
+
+.cell:hover:not(.dead):not(.sel):not(.popping) {
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.14);
+  filter: brightness(1.06);
+  z-index: 2;
+}
+.cell.sel {
+  transform: translateY(-5px) scale(1.12);
+  box-shadow: 0 0 0 3.5px #ff66bb, 0 8px 22px rgba(255,80,180,0.4);
+  z-index: 3;
+  animation: selPulse 0.55s ease infinite alternate;
+}
+@keyframes selPulse {
+  from { box-shadow: 0 0 0 3px #ff66bb, 0 6px 18px rgba(255,80,180,0.3); }
+  to   { box-shadow: 0 0 0 5px #ffaadd, 0 10px 28px rgba(255,80,180,0.5); }
+}
+.cell.popping { animation: cellPop 0.42s cubic-bezier(.36,.07,.19,.97) forwards; }
+@keyframes cellPop {
+  0%   { transform: scale(1); opacity: 1; }
+  35%  { transform: scale(1.4) rotate(12deg); opacity: 1; filter: brightness(1.7); }
+  100% { transform: scale(0) rotate(-15deg); opacity: 0; }
+}
+.cell.dead {
+  background: linear-gradient(145deg, #f0ecf4, #e8e4ec) !important;
+  color: transparent !important;
+  border-color: rgba(210,200,215,0.3) !important;
+  box-shadow: none !important;
+  cursor: default; opacity: 0.45;
+}
+.cell.dead::after { display: none; }
+.cell.new-appear {
+  animation: newBounce 0.38s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes newBounce {
+  0%   { transform: scale(0) translateY(-16px); opacity: 0; }
+  65%  { transform: scale(1.12) translateY(0); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ========== BOTTOM BAR ========== */
+.bottom-bar {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; justify-content: space-between;
+}
+.add-btn {
+  font-family: 'Fredoka One', cursive; font-size: 15px;
+  padding: 10px 22px; border-radius: 50px; cursor: pointer;
+  background: linear-gradient(135deg, #ffb0d8, #d090ff);
+  color: white; border: 2.5px solid rgba(255,255,255,0.75);
+  box-shadow: 0 4px 14px rgba(220,120,200,0.38), 0 1px 0 rgba(255,255,255,0.7) inset;
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s;
+  text-shadow: 0 1px 3px rgba(160,50,140,0.35);
+}
+.add-btn:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 7px 20px rgba(220,120,200,0.5); }
+.add-btn:active { transform: scale(0.95); }
+
+.msg {
+  flex: 1; text-align: center;
+  font-size: 13px; font-weight: 800; color: #c08ad8;
+  min-height: 20px; transition: color 0.2s;
+}
+.msg.err { color: #ff5577; }
+.msg.ok  { color: #44bb77; }
+.msg.wow { color: #ff8800; }
+
+/* ========== FLOATING TEXT ========== */
+.float-text {
+  position: fixed; pointer-events: none; z-index: 500;
+  font-family: 'Fredoka One', cursive; font-size: 26px;
+  white-space: nowrap; user-select: none;
+  animation: floatUp 1s ease forwards;
+}
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  70%  { opacity: 1; transform: translateY(-60px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-90px) scale(0.8); }
+}
+
+/* ========== CONFETTI ========== */
+.conf {
+  position: fixed; pointer-events: none; z-index: 600;
+  font-size: 20px;
+  animation: confFly 0.9s ease forwards;
+}
+@keyframes confFly {
+  0%   { opacity: 1; transform: translate(0,0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(var(--dx),var(--dy)) scale(0.2) rotate(var(--rot)); }
+}
+
+/* ========== WIN OVERLAY ========== */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(255,230,248,0.65); backdrop-filter: blur(8px);
+  z-index: 800; align-items: center; justify-content: center;
+}
+.overlay.show { display: flex; }
+.win-box {
+  background: white; border-radius: 28px;
+  padding: 40px 52px; text-align: center;
+  box-shadow: 0 16px 60px rgba(200,100,200,0.26);
+  border: 3px solid rgba(255,200,235,0.5);
+}
+.win-emoji { font-size: 52px; margin-bottom: 10px; }
+.win-title {
+  font-family: 'Fredoka One', cursive; font-size: 44px;
+  background: linear-gradient(135deg, #ff5fa0, #a060ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 6px;
+}
+.win-sub { color: #c090d8; font-size: 13px; font-weight: 800; margin-bottom: 22px; }
+.win-btn {
+  font-family: 'Fredoka One', cursive; font-size: 18px;
+  padding: 12px 34px; border-radius: 50px; cursor: pointer;
+  background: linear-gradient(135deg, #ffb0d8, #d090ff);
+  color: white; border: 3px solid rgba(255,255,255,0.8);
+  box-shadow: 0 5px 16px rgba(220,120,200,0.4);
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1);
+}
+.win-btn:hover { transform: scale(1.08); }
+
+@media (max-width: 600px) {
+  :root { --cell: 42px; --radius: 10px; }
+  .cell { font-size: 18px; }
+  .win-box { padding: 28px 26px; }
+}
+</style>
+</head>
+<body>
+
+<div class="animal-stage" id="animalStage"></div>
+
+<div class="title-wrap">
+  <h1>🌸 なかよしナンバーズ</h1>
+  <p class="title-sub">みんなでなかよく きえちゃおう♪</p>
+</div>
+
+<div class="game-panel">
+  <div class="stats-bar">
+    <div class="pill">
+      <span class="pill-icon">⭐</span>
+      <div class="pill-texts"><span class="pill-label">SCORE</span><span class="pill-val" id="scoreVal">0</span></div>
+    </div>
+    <div class="pill">
+      <span class="pill-icon">💕</span>
+      <div class="pill-texts"><span class="pill-label">PAIRS</span><span class="pill-val" id="pairsVal">0</span></div>
+    </div>
+    <div class="pill">
+      <span class="pill-icon">📋</span>
+      <div class="pill-texts"><span class="pill-label">ROWS</span><span class="pill-val" id="rowsVal">3</span></div>
+    </div>
+    <button class="rules-btn" onclick="toggleRules()">🌸 ルール</button>
+    <button class="reset-btn" onclick="resetGame()">↺ リセット</button>
+  </div>
+
+  <div class="rules-panel" id="rulesPanel">
+    🐣 縦・横・斜めに<b>隣接する2つの数字</b>を順にクリック！<br>
+    💕 <b>同じ数字</b>または<b>合計10になるペア</b>が消えるよ✨<br>
+    🐾 消えた穴はスキップして隣接判定（<b>1▫▫1</b>→両端の1は隣接）<br>
+    🦆 <b>行の右端</b>の数字は<b>次の行の左端</b>に隣接してるよ！<br>
+    🐶 詰まったら<b>＋行追加</b>で続けよう！<br>
+    🌈 <b>1行まるごと消えると</b>ボーナス点＆行が詰まるよ！
+  </div>
+
+  <div class="grid-scroll">
+    <div id="gridWrap"></div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="add-btn" onclick="addRows()">＋ 行追加</button>
+    <span class="msg" id="msg">すきな数字をえらんでね！</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="win-box">
+    <div class="win-emoji">🎉🐾🎉</div>
+    <div class="win-title">すごーい！</div>
+    <div class="win-sub">ぜんぶの数字を消したよ✨ やったね！</div>
+    <button class="win-btn" onclick="resetGame(); document.getElementById('overlay').classList.remove('show')">もういちど！</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  ANIMAL STICKER DEFINITIONS (inline SVG, hand-drawn style)
+// ============================================================
+const ANIMAL_SVGS = {
+  chick: (s) => `<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- body -->
+    <ellipse cx="40" cy="52" rx="22" ry="20" fill="#FFE066" stroke="#E8A800" stroke-width="2"/>
+    <!-- head -->
+    <circle cx="40" cy="28" r="18" fill="#FFE566" stroke="#E8A800" stroke-width="2"/>
+    <!-- wing left -->
+    <ellipse cx="20" cy="54" rx="9" ry="6" fill="#FFD022" stroke="#E8A800" stroke-width="1.5" transform="rotate(-20 20 54)"/>
+    <!-- wing right -->
+    <ellipse cx="60" cy="54" rx="9" ry="6" fill="#FFD022" stroke="#E8A800" stroke-width="1.5" transform="rotate(20 60 54)"/>
+    <!-- beak -->
+    <ellipse cx="40" cy="33" rx="5" ry="3.5" fill="#FF9922" stroke="#DD7700" stroke-width="1.5"/>
+    <!-- eye left -->
+    <circle cx="33" cy="24" r="4" fill="white"/>
+    <circle cx="33" cy="24" r="2.5" fill="#222"/>
+    <circle cx="34" cy="23" r="1" fill="white"/>
+    <!-- eye right -->
+    <circle cx="47" cy="24" r="4" fill="white"/>
+    <circle cx="47" cy="24" r="2.5" fill="#222"/>
+    <circle cx="48" cy="23" r="1" fill="white"/>
+    <!-- cheek blush -->
+    <ellipse cx="28" cy="30" rx="4" ry="2.5" fill="#FFB0B0" opacity="0.7"/>
+    <ellipse cx="52" cy="30" rx="4" ry="2.5" fill="#FFB0B0" opacity="0.7"/>
+    <!-- feet -->
+    <line x1="34" y1="70" x2="30" y2="76" stroke="#FF9922" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="34" y1="70" x2="34" y2="77" stroke="#FF9922" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="46" y1="70" x2="42" y2="76" stroke="#FF9922" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="46" y1="70" x2="46" y2="77" stroke="#FF9922" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>`,
+
+  dog: (s) => `<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- ear left -->
+    <ellipse cx="20" cy="22" rx="10" ry="14" fill="#D4956A" stroke="#A06030" stroke-width="1.5" transform="rotate(-15 20 22)"/>
+    <!-- ear right -->
+    <ellipse cx="60" cy="22" rx="10" ry="14" fill="#D4956A" stroke="#A06030" stroke-width="1.5" transform="rotate(15 60 22)"/>
+    <!-- head -->
+    <circle cx="40" cy="32" r="22" fill="#E8B080" stroke="#A06030" stroke-width="2"/>
+    <!-- body -->
+    <ellipse cx="40" cy="62" rx="18" ry="14" fill="#E8B080" stroke="#A06030" stroke-width="2"/>
+    <!-- muzzle -->
+    <ellipse cx="40" cy="40" rx="12" ry="9" fill="#F5CFA0"/>
+    <!-- nose -->
+    <ellipse cx="40" cy="35" rx="5" ry="3.5" fill="#442200"/>
+    <ellipse cx="41" cy="34" rx="1.5" ry="1" fill="white" opacity="0.5"/>
+    <!-- mouth -->
+    <path d="M34 42 Q40 47 46 42" stroke="#A06030" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <!-- eye left -->
+    <circle cx="31" cy="27" r="4.5" fill="white"/>
+    <circle cx="31" cy="27" r="3" fill="#3a1800"/>
+    <circle cx="32.5" cy="25.5" r="1.2" fill="white"/>
+    <!-- eye right -->
+    <circle cx="49" cy="27" r="4.5" fill="white"/>
+    <circle cx="49" cy="27" r="3" fill="#3a1800"/>
+    <circle cx="50.5" cy="25.5" r="1.2" fill="white"/>
+    <!-- blush -->
+    <ellipse cx="24" cy="36" rx="5" ry="3" fill="#FFB0A0" opacity="0.6"/>
+    <ellipse cx="56" cy="36" rx="5" ry="3" fill="#FFB0A0" opacity="0.6"/>
+    <!-- tail -->
+    <path d="M56 62 Q70 50 66 42" stroke="#E8B080" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M56 62 Q70 50 66 42" stroke="#A06030" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  cat: (s) => `<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- ear left -->
+    <polygon points="14,28 22,8 30,28" fill="#FFAACC" stroke="#D06080" stroke-width="1.5" stroke-linejoin="round"/>
+    <polygon points="18,26 22,13 28,26" fill="#FFD4E8"/>
+    <!-- ear right -->
+    <polygon points="50,28 58,8 66,28" fill="#FFAACC" stroke="#D06080" stroke-width="1.5" stroke-linejoin="round"/>
+    <polygon points="52,26 58,13 64,26" fill="#FFD4E8"/>
+    <!-- head -->
+    <circle cx="40" cy="36" r="22" fill="#FFBBDD" stroke="#D06080" stroke-width="2"/>
+    <!-- body -->
+    <ellipse cx="40" cy="64" rx="17" ry="13" fill="#FFBBDD" stroke="#D06080" stroke-width="2"/>
+    <!-- whiskers left -->
+    <line x1="14" y1="38" x2="30" y2="40" stroke="#C06070" stroke-width="1.2" opacity="0.7"/>
+    <line x1="14" y1="42" x2="30" y2="42" stroke="#C06070" stroke-width="1.2" opacity="0.7"/>
+    <!-- whiskers right -->
+    <line x1="50" y1="40" x2="66" y2="38" stroke="#C06070" stroke-width="1.2" opacity="0.7"/>
+    <line x1="50" y1="42" x2="66" y2="42" stroke="#C06070" stroke-width="1.2" opacity="0.7"/>
+    <!-- muzzle -->
+    <ellipse cx="40" cy="43" rx="10" ry="7" fill="#FFD8EC"/>
+    <!-- nose -->
+    <path d="M38 39 L42 39 L40 41 Z" fill="#FF6699"/>
+    <!-- mouth -->
+    <path d="M37 42 Q40 46 43 42" stroke="#D06080" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- eye left -->
+    <ellipse cx="31" cy="32" rx="4.5" ry="5" fill="white"/>
+    <ellipse cx="31" cy="32" rx="2.5" ry="4" fill="#2a0a1a"/>
+    <circle cx="32" cy="30" r="1.2" fill="white"/>
+    <!-- eye right -->
+    <ellipse cx="49" cy="32" rx="4.5" ry="5" fill="white"/>
+    <ellipse cx="49" cy="32" rx="2.5" ry="4" fill="#2a0a1a"/>
+    <circle cx="50" cy="30" r="1.2" fill="white"/>
+    <!-- blush -->
+    <ellipse cx="24" cy="40" rx="5" ry="3" fill="#FFB0C8" opacity="0.55"/>
+    <ellipse cx="56" cy="40" rx="5" ry="3" fill="#FFB0C8" opacity="0.55"/>
+    <!-- tail -->
+    <path d="M55 70 Q72 68 70 55 Q68 44 62 46" stroke="#FFBBDD" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M55 70 Q72 68 70 55 Q68 44 62 46" stroke="#D06080" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  duck: (s) => `<svg width="${s}" height="${s}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- body -->
+    <ellipse cx="42" cy="56" rx="24" ry="18" fill="#AADDFF" stroke="#5599CC" stroke-width="2"/>
+    <!-- wing -->
+    <ellipse cx="52" cy="54" rx="14" ry="9" fill="#88CCFF" stroke="#5599CC" stroke-width="1.5" transform="rotate(15 52 54)"/>
+    <!-- head -->
+    <circle cx="28" cy="30" r="17" fill="#AADDFF" stroke="#5599CC" stroke-width="2"/>
+    <!-- beak top -->
+    <path d="M14 29 Q8 30 8 34 Q8 37 14 37 L20 33 Z" fill="#FFCC44" stroke="#CC8800" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- beak bottom -->
+    <ellipse cx="13" cy="36" rx="6" ry="2.5" fill="#FFAA22" stroke="#CC8800" stroke-width="1"/>
+    <!-- eye -->
+    <circle cx="24" cy="24" r="4.5" fill="white"/>
+    <circle cx="24" cy="24" r="3" fill="#1a1a2a"/>
+    <circle cx="25.5" cy="22.5" r="1.2" fill="white"/>
+    <!-- head crest feather -->
+    <path d="M28 14 Q32 4 36 12" stroke="#88CCFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- blush -->
+    <ellipse cx="20" cy="32" rx="4" ry="2.5" fill="#FFB0D0" opacity="0.6"/>
+    <!-- feet -->
+    <path d="M32 72 Q28 76 24 76 M32 72 Q31 76 27 78 M32 72 L32 78" stroke="#FFCC44" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M50 72 Q46 76 42 76 M50 72 Q49 76 45 78 M50 72 L50 78" stroke="#FFCC44" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- neck -->
+    <path d="M34 42 Q36 50 42 54" stroke="#AADDFF" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M34 42 Q36 50 42 54" stroke="#5599CC" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`
+};
+
+const CONF_CHARS = ['✨','💫','🌸','⭐','💕','🎀','🌟','💖','🍬','🎊'];
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+const COLS = 10;
+let grid = [];     // grid[r][c]: number | null
+let selected = null;
+let score = 0;
+let pairs = 0;
+let busy = false;  // lock during animations
+
+// ============================================================
+//  ADJACENCY: "read-order" wrap
+//  Right-end of row R col 9 is adjacent to Left of row R+1 col 0
+//  and neighbors in diagonal sense too.
+//  We build a flat-index system: idx = r*COLS + c
+//  Two cells (r1,c1) and (r2,c2) are "scan-adjacent" if they
+//  are within 1 step in the 8 standard directions INCLUDING the
+//  wrap: (r, COLS-1) wraps to (r+1, 0).
+//
+//  For skip-over-dead: walk in direction until hitting alive cell.
+//  Directions including the line-wrap diagonal:
+//    Standard: [dr,dc] in {-1,0,1}x{-1,0,1} minus [0,0]
+//    Wrap-cross: from (r, COLS-1) one step right goes to (r+1, 0)
+//               from (r, 0) one step left goes to (r-1, COLS-1)
+// ============================================================
+
+// Convert (r,c) to flat index and back
+function idx(r,c){ return r*COLS+c; }
+function fromIdx(i){ return {r:Math.floor(i/COLS), c:i%COLS}; }
+
+// Wrap-aware step: from (r,c) move one step in direction (dr,dc)
+// where dc can be ±1 and wraps the row boundary as described
+function wrapStep(r, c, dr, dc) {
+  let nc = c + dc;
+  let nr = r + dr;
+  // standard horizontal wrap
+  if (nc < 0)    { nc = COLS-1; nr += (dr === 0 ? -1 : 0); }
+  if (nc >= COLS){ nc = 0;      nr += (dr === 0 ?  1 : 0); }
+  // The "line-wrap" cross adjacency:
+  // Right edge (c=COLS-1) stepping right (dc=+1,dr=0) → (r+1,0)
+  // Left edge (c=0) stepping left (dc=-1,dr=0) → (r-1,COLS-1)
+  // are handled above.
+  // For diagonal: we only allow standard diagonals within same row vicinity
+  // NOT extra line-wrap diagonals (would be too confusing).
+  // However the pure horizontal line-wrap IS included (dc=±1, dr=0 with edge bounce).
+  return {r:nr, c:nc};
+}
+
+// All 8 direction vectors
+const DIRS8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+// Find the first alive cell reachable from (r,c) moving (dr,dc) repeatedly.
+// For the pure horizontal direction (dr=0, dc=±1): wraps at row boundary
+// (right edge → next row left, left edge → prev row right).
+// For vertical and diagonal: no column wrapping.
+function walkToAlive(r, c, dr, dc) {
+  const MAX = (grid.length * COLS) + 2;
+  let cr = r, cc = c;
+  for (let step=0; step<MAX; step++) {
+    if (dr === 0) {
+      // horizontal with line-wrap
+      cc += dc;
+      if (cc < 0)    { cc = COLS-1; cr--; }
+      else if (cc >= COLS) { cc = 0; cr++; }
+    } else {
+      cr += dr; cc += dc;
+    }
+    if (cr < 0 || cr >= grid.length) return null;
+    if (cc < 0 || cc >= COLS) return null;
+    // stop if we've looped back to start
+    if (cr === r && cc === c) return null;
+    if (grid[cr][cc] !== null) return {r:cr, c:cc};
+  }
+  return null;
+}
+
+function isAdjacent(r1,c1,r2,c2) {
+  for (const [dr,dc] of DIRS8) {
+    const found = walkToAlive(r1,c1,dr,dc);
+    if (found && found.r===r2 && found.c===c2) return true;
+  }
+  return false;
+}
+
+function isValidPair(a,b){ return a===b || a+b===10; }
+
+// ============================================================
+//  GRID GENERATION
+// ============================================================
+function randomRow(){ return Array.from({length:COLS}, ()=>(1+Math.floor(Math.random()*9))); }
+
+// Initial 3 rows: make some pairs obvious, some hard
+function makeInitialGrid() {
+  const rows = [];
+  // Row 0 and 1: random but ensure ~30% pairs exist between them
+  rows.push(randomRow());
+  rows.push(randomRow());
+  // Row 2: slightly harder, fewer easy pairs
+  rows.push(randomRow());
+  // Inject a few deliberate same-row pairs so it's not impossible
+  for (let r=0; r<3; r++) {
+    for (let attempt=0; attempt<4; attempt++) {
+      const c = Math.floor(Math.random()*(COLS-1));
+      const v = rows[r][c];
+      const comp = 10-v; const partner = (Math.random()<0.5 && comp>=1 && comp<=9) ? comp : v;
+      rows[r][c+1] = partner;
+    }
+  }
+  return rows;
+}
+
+// Smart rows for +Add:
+//   - Each new row is filled CONTIGUOUSLY from col 0 (no gaps inside)
+//   - Fill length: between 6 and COLS cells (left-aligned, rest is null/dead)
+//   - ~60% of filled cells become pairable with adjacent alive cells
+function makeSmartRows(count) {
+  const newRows = [];
+  for (let ri=0; ri<count; ri++) {
+    const fillCount = 6 + Math.floor(Math.random() * (COLS - 5));
+    const row = [];
+    for (let c=0; c<COLS; c++) {
+      row.push(c < fillCount ? (1 + Math.floor(Math.random()*9)) : null);
+    }
+    newRows.push(row);
+  }
+
+  const allRows = [...grid, ...newRows];
+  const totalRows = allRows.length;
+  const newStart = grid.length;
+
+  for (let ri=newStart; ri<totalRows; ri++) {
+    for (let c=0; c<COLS; c++) {
+      if (allRows[ri][c] === null) continue;
+      if (Math.random() > 0.6) continue;
+      const neighbors = [];
+      for (const [dr,dc] of DIRS8) {
+        let nr=ri+dr, nc=c+dc;
+        if (dr===0) {
+          if (nc<0)         { nc=COLS-1; nr--; }
+          else if (nc>=COLS){ nc=0;      nr++; }
+        }
+        if (nr>=0 && nr<totalRows && nc>=0 && nc<COLS) {
+          const v = allRows[nr][nc];
+          if (typeof v === "number" && v>=1 && v<=9) neighbors.push(v);
+        }
+      }
+      if (neighbors.length===0) continue;
+      const target = neighbors[Math.floor(Math.random()*neighbors.length)];
+      const complement = 10 - target;
+      const partner = Math.random()<0.5 ? target : complement;
+      if (partner >= 1 && partner <= 9) allRows[ri][c] = partner;
+    }
+  }
+  return newRows.map((_,i) => allRows[newStart+i]);
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function render(newRowIndices=[]) {
+  const wrap = document.getElementById('gridWrap');
+  wrap.innerHTML = '';
+  for (let r=0; r<grid.length; r++) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'grid-row';
+    rowEl.dataset.row = r;
+    for (let c=0; c<COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const v = grid[r][c];
+      // Safety: treat anything that isn't a valid 1-9 integer as dead
+      const vSafe = (typeof v === 'number' && Number.isInteger(v) && v>=1 && v<=9) ? v : null;
+      if (vSafe===null) {
+        if (v !== null) grid[r][c] = null; // fix corrupted state
+        cell.classList.add('dead');
+        cell.textContent = '';
+      } else {
+        cell.dataset.v = vSafe;
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.textContent = vSafe;
+        cell.addEventListener('click', ()=>onCell(r,c));
+        if (selected && selected.r===r && selected.c===c) cell.classList.add('sel');
+      }
+      if (newRowIndices.includes(r)) {
+        cell.classList.add('new-appear');
+        cell.style.animationDelay = (c*28)+'ms';
+      }
+      rowEl.appendChild(cell);
+    }
+    wrap.appendChild(rowEl);
+  }
+  document.getElementById('rowsVal').textContent = grid.length;
+}
+
+function getCell(r,c){ return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+
+// ============================================================
+//  CELL CLICK
+// ============================================================
+function onCell(r,c) {
+  if (busy) return;
+  if (grid[r][c]===null) return;
+
+  if (!selected) {
+    selected={r,c};
+    render();
+    setMsg(`${grid[r][c]} をえらんだよ！✨ ペアをさがしてね`,'');
+    return;
+  }
+
+  if (selected.r===r && selected.c===c) {
+    selected=null; render(); setMsg('キャンセルしたよ〜','');
+    return;
+  }
+
+  const v1=grid[selected.r][selected.c], v2=grid[r][c];
+  const r1=selected.r, c1=selected.c;
+  selected=null;
+
+  if (!isAdjacent(r1,c1,r,c)) {
+    setMsg('となりじゃないよ〜😅','err');
+    render(); return;
+  }
+  if (!isValidPair(v1,v2)) {
+    setMsg(`${v1}と${v2}はペアにならないよ🙅`,'err');
+    render(); return;
+  }
+
+  // === Valid pair ===
+  busy=true;
+  const cell1=getCell(r1,c1), cell2=getCell(r,c);
+  if(cell1){ cell1.classList.remove('sel'); cell1.classList.add('popping'); }
+  if(cell2) cell2.classList.add('popping');
+
+  // confetti
+  spawnConf(cell1); spawnConf(cell2);
+
+  setTimeout(()=>{
+    grid[r1][c1]=null;
+    grid[r][c]=null;
+    pairs++; score+=10;
+    updateStats();
+    render();
+    const okMsgs=['きえた！💕','やった！✨','ぱちぱち🎉','いいね！🌸','すごい！⭐','ナイス！💫'];
+    setMsg(okMsgs[Math.floor(Math.random()*okMsgs.length)]+' ＋10点！','ok');
+
+    // Check for complete rows to eliminate
+    checkRowClear(()=>{
+      busy=false;
+      checkWin();
+    });
+  }, 380);
+}
+
+// ============================================================
+//  ROW CLEAR CHECK
+// ============================================================
+function checkRowClear(cb) {
+  const clearRows = [];
+  for (let r=0; r<grid.length; r++) {
+    if (grid[r].every(v=>v===null)) clearRows.push(r);
+  }
+  if (clearRows.length===0){ cb(); return; }
+
+  // Animate them away
+  clearRows.forEach(r=>{
+    const rowEl = document.querySelector(`.grid-row[data-row="${r}"]`);
+    if(rowEl) rowEl.classList.add('row-vanish');
+  });
+
+  // Big score bonus and effects
+  const bonus = clearRows.length * 50;
+  score += bonus;
+  updateStats();
+
+  // Float text
+  clearRows.forEach(r=>{
+    const rowEl = document.querySelector(`.grid-row[data-row="${r}"]`);
+    if (rowEl) {
+      const rect = rowEl.getBoundingClientRect();
+      spawnFloatText(`🌈 ＋${bonus}点！`,
+        rect.left + rect.width/2,
+        rect.top + rect.height/2,
+        '#ff8800');
+    }
+  });
+
+  // Extra confetti burst
+  for(let i=0;i<12;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');
+      el.className='conf';
+      el.textContent=CONF_CHARS[Math.floor(Math.random()*CONF_CHARS.length)];
+      const x=100+Math.random()*(window.innerWidth-200);
+      const y=100+Math.random()*(window.innerHeight-200);
+      el.style.left=x+'px'; el.style.top=y+'px';
+      const ang=Math.random()*Math.PI*2, dist=60+Math.random()*80;
+      el.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+      el.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+      el.style.setProperty('--rot',Math.random()*360+'deg');
+      el.style.animationDelay=(Math.random()*0.15)+'s';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),1000);
+    },i*40);
+  }
+
+  setTimeout(()=>{
+    // Remove cleared rows from grid
+    for(let i=clearRows.length-1;i>=0;i--) grid.splice(clearRows[i],1);
+    if(grid.length===0) grid=[];
+    render();
+    setMsg(`🌈 ${clearRows.length}行きえた！ ＋${bonus}点ボーナス！`,'wow');
+    cb();
+  },600);
+}
+
+// ============================================================
+//  ADD ROWS
+// ============================================================
+function addRows() {
+  if(busy) return;
+  const count = 1 + Math.floor(Math.random()*2); // 1 or 2 rows
+  const newRows = makeSmartRows(count);
+  const startIdx = grid.length;
+  newRows.forEach(r=>grid.push(r));
+  updateStats();
+  render(Array.from({length:count},(_,i)=>startIdx+i));
+  setMsg(`🐣 ${count}行あたらしい仲間が来たよ！`,'ok');
+}
+
+// ============================================================
+//  WIN CHECK
+// ============================================================
+function checkWin() {
+  if(grid.length===0 || grid.every(row=>row.every(v=>v===null))){
+    setTimeout(()=>{
+      document.getElementById('overlay').classList.add('show');
+      for(let i=0;i<25;i++){
+        setTimeout(()=>{
+          const el=document.createElement('div');
+          el.className='conf'; el.style.fontSize='28px';
+          el.textContent=CONF_CHARS[Math.floor(Math.random()*CONF_CHARS.length)];
+          el.style.left=Math.random()*window.innerWidth+'px';
+          el.style.top=Math.random()*window.innerHeight+'px';
+          const ang=Math.random()*Math.PI*2, dist=80+Math.random()*120;
+          el.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+          el.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+          el.style.setProperty('--rot',Math.random()*720+'deg');
+          document.body.appendChild(el);
+          setTimeout(()=>el.remove(),1000);
+        },i*60);
+      }
+    },500);
+  }
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function updateStats(){
+  document.getElementById('scoreVal').textContent=score;
+  document.getElementById('pairsVal').textContent=pairs;
+  document.getElementById('rowsVal').textContent=grid.length;
+}
+
+function setMsg(text,type=''){
+  const el=document.getElementById('msg');
+  el.textContent=text;
+  el.className='msg'+(type?' '+type:'');
+}
+
+function spawnConf(cellEl){
+  if(!cellEl) return;
+  const rect=cellEl.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  for(let i=0;i<5;i++){
+    const el=document.createElement('div'); el.className='conf';
+    el.textContent=CONF_CHARS[Math.floor(Math.random()*CONF_CHARS.length)];
+    el.style.left=cx+'px'; el.style.top=cy+'px';
+    const ang=Math.random()*Math.PI*2, dist=45+Math.random()*55;
+    el.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+    el.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+    el.style.setProperty('--rot',Math.random()*360+'deg');
+    el.style.animationDelay=(Math.random()*0.08)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),950);
+  }
+}
+
+function spawnFloatText(text,x,y,color){
+  const el=document.createElement('div');
+  el.className='float-text';
+  el.textContent=text;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  el.style.color=color||'#9960cc';
+  el.style.transform='translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function toggleRules(){ document.getElementById('rulesPanel').classList.toggle('open'); }
+
+// ============================================================
+//  ANIMAL STICKERS
+// ============================================================
+const ANIMAL_TYPES = ['chick','dog','cat','duck'];
+const STICKER_SIZE = 72;
+const stickerData = [
+  {type:'chick', left:'3%',  top:'8%',  delay:0},
+  {type:'duck',  left:'89%', top:'5%',  delay:1.2},
+  {type:'dog',   left:'4%',  top:'58%', delay:0.7},
+  {type:'cat',   left:'88%', top:'62%', delay:1.8},
+  {type:'chick', left:'46%', top:'2%',  delay:2.1},
+  {type:'duck',  left:'18%', top:'84%', delay:0.4},
+  {type:'cat',   left:'72%', top:'82%', delay:1.5},
+  {type:'dog',   left:'55%', top:'88%', delay:2.6},
+];
+
+function initStickers(){
+  const stage=document.getElementById('animalStage');
+  stage.innerHTML='';
+  stickerData.forEach((sd,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='sticker';
+    wrap.style.left=sd.left; wrap.style.top=sd.top;
+    wrap.style.width=STICKER_SIZE+'px'; wrap.style.height=STICKER_SIZE+'px';
+    wrap.innerHTML=ANIMAL_SVGS[sd.type](STICKER_SIZE);
+    const dur=(3.5+Math.random()*2.5).toFixed(1);
+    wrap.style.animation=`stickerFloat ${dur}s ease-in-out ${sd.delay}s infinite`;
+
+    // Click: bounce
+    wrap.addEventListener('click',()=>{
+      wrap.classList.remove('wiggling','bouncing');
+      void wrap.offsetWidth;
+      wrap.classList.add('bouncing');
+      setTimeout(()=>wrap.classList.remove('bouncing'),600);
+    });
+    // Hover: wiggle
+    wrap.addEventListener('mouseenter',()=>{
+      if(!wrap.classList.contains('bouncing')){
+        wrap.classList.add('wiggling');
+      }
+    });
+    wrap.addEventListener('mouseleave',()=>wrap.classList.remove('wiggling'));
+
+    stage.appendChild(wrap);
+  });
+}
+
+// Mouse proximity reaction
+document.addEventListener('mousemove',e=>{
+  document.querySelectorAll('.sticker').forEach(s=>{
+    if(s.classList.contains('bouncing')) return;
+    const r=s.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const dx=e.clientX-cx, dy=e.clientY-cy;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<110){
+      const sc=1+(1-dist/110)*0.28;
+      const ox=-dx*0.05, oy=-dy*0.05;
+      s.style.transform=`scale(${sc}) translate(${ox}px,${oy}px)`;
+    } else {
+      s.style.transform='';
+    }
+  });
+});
+
+// ============================================================
+//  INIT / RESET
+// ============================================================
+function initGame(){
+  grid=makeInitialGrid();
+  selected=null; score=0; pairs=0; busy=false;
+  updateStats(); render(); setMsg('すきな数字をえらんでね！');
+  initStickers();
+}
+
+function resetGame(){
+  document.getElementById('overlay').classList.remove('show');
+  initGame();
+}
+
+initGame();
+</script>
+</body>
+</html>
