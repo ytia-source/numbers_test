@@ -532,14 +532,18 @@ function allMovesOnGrid(g){
 
           const vals=ch.map(p=>g[p.r][p.c]);
           const sum=vals.reduce((a,b)=>a+b,0);
-          if(sum>10) break;
           const isSamePair=(ch.length===2&&vals[0]===vals[1]);
           const isSumTen=(sum===10&&ch.length>=2);
           if(isSamePair||isSumTen){
             const key=ch.map(p=>p.r*100+p.c).sort((a,b)=>a-b).join(',');
-            if(!seen.has(key)){ seen.add(key); moves.push(ch.map(p=>({r:p.r,c:p.c}))); }
+            if(!seen.has(key)){
+              seen.add(key);
+              moves.push(ch.map(p=>({r:p.r,c:p.c})));
+            }
             break; // stop extending for both same-pair AND sum-10
           }
+
+          if(sum>10) break;
         }
       }
     }
@@ -622,64 +626,78 @@ function makeRow(pairRate, prevRow){
 }
 
 function buildSolvableBoard(cfg){
-  for(let att=0;att<40;att++){
-    const g=[];
-    for(let r=0;r<cfg.rows;r++) g.push(makeRow(cfg.pairRate, r>0?g[r-1]:null));
-    const plan=solve(g, 250);
-    if(plan&&plan.length>0) return {g, plan};
+  const g=[];
+  for(let r=0;r<cfg.rows;r++) {
+    g.push(makeRow(cfg.pairRate, r>0?g[r-1]:null));
   }
-  return null;
+  return { g, plan: [] };
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  ADD ROWS  – build rows that, combined with current grid,
 //  remain fully solvable. Returns {newRows, newPlan}.
 // ═══════════════════════════════════════════════════════════════
+// function buildAddRowsSolvable(count){
+//   // Try up to 30 random row sets, pick first that is solvable
+//   for(let att=0;att<30;att++){
+//     const newRows=[];
+//     for(let ri=0;ri<count;ri++){
+//       const isLast=ri===count-1;
+//       const fill=isLast?(6+Math.floor(Math.random()*(COLS-5))):COLS;
+//       const prevRow=ri>0?newRows[ri-1]:(grid.length>0?grid[grid.length-1]:null);
+//       newRows.push(makeRow(0.45, prevRow).map((v,c)=>c<fill?v:null));
+//     }
+//
+//     // Inject pairable values referencing current+new grid
+//     const combined=[...grid.map(r=>[...r]),...newRows.map(r=>[...r])];
+//     const ns=grid.length;
+//     for(let ri=ns;ri<combined.length;ri++){
+//       for(let c=0;c<COLS;c++){
+//         if(combined[ri][c]===null||Math.random()>0.6) continue;
+//         const nbVals=[];
+//         for(const [dr,dc] of DIRS8){
+//           const f=walkAlive(combined,ri,c,dr,dc);
+//           if(f){ const v=combined[f.r][f.c]; if(v>=1&&v<=9) nbVals.push(v); }
+//         }
+//         if(!nbVals.length) continue;
+//         const t=nbVals[Math.floor(Math.random()*nbVals.length)];
+//         const comp=10-t;
+//         let p=Math.random()<0.55&&comp>=1&&comp<=9?comp:t;
+//         if(p<1||p>9) p=t;
+//         if(c>=2&&combined[ri][c-1]===p&&combined[ri][c-2]===p) p=(p%9)+1;
+//         combined[ri][c]=p;
+//       }
+//     }
+//
+//     const candidateGrid=combined;
+//     const plan=solve(candidateGrid, 300);
+//     if(plan&&plan.length>0){
+//       return {newRows:combined.slice(ns), plan};
+//     }
+//   }
+//   // fallback: just return random rows with no plan guarantee
+//   const newRows=[];
+//   for(let ri=0;ri<count;ri++){
+//     const fill=ri<count-1?COLS:(6+Math.floor(Math.random()*(COLS-5)));
+//     newRows.push(Array.from({length:COLS},(_,c)=>c<fill?rndInt():null));
+//   }
+//   return {newRows, plan:null};
+// }
+
 function buildAddRowsSolvable(count){
-  // Try up to 30 random row sets, pick first that is solvable
-  for(let att=0;att<30;att++){
-    const newRows=[];
-    for(let ri=0;ri<count;ri++){
-      const isLast=ri===count-1;
-      const fill=isLast?(6+Math.floor(Math.random()*(COLS-5))):COLS;
-      const prevRow=ri>0?newRows[ri-1]:(grid.length>0?grid[grid.length-1]:null);
-      newRows.push(makeRow(0.45, prevRow).map((v,c)=>c<fill?v:null));
-    }
+  const newRows = [];
 
-    // Inject pairable values referencing current+new grid
-    const combined=[...grid.map(r=>[...r]),...newRows.map(r=>[...r])];
-    const ns=grid.length;
-    for(let ri=ns;ri<combined.length;ri++){
-      for(let c=0;c<COLS;c++){
-        if(combined[ri][c]===null||Math.random()>0.6) continue;
-        const nbVals=[];
-        for(const [dr,dc] of DIRS8){
-          const f=walkAlive(combined,ri,c,dr,dc);
-          if(f){ const v=combined[f.r][f.c]; if(v>=1&&v<=9) nbVals.push(v); }
-        }
-        if(!nbVals.length) continue;
-        const t=nbVals[Math.floor(Math.random()*nbVals.length)];
-        const comp=10-t;
-        let p=Math.random()<0.55&&comp>=1&&comp<=9?comp:t;
-        if(p<1||p>9) p=t;
-        if(c>=2&&combined[ri][c-1]===p&&combined[ri][c-2]===p) p=(p%9)+1;
-        combined[ri][c]=p;
-      }
-    }
+  for (let ri = 0; ri < count; ri++) {
+    const isLast = ri === count - 1;
+    const fill = isLast ? (6 + Math.floor(Math.random() * (COLS - 5))) : COLS;
+    const prevRow = ri > 0 ? newRows[ri - 1] : (grid.length > 0 ? grid[grid.length - 1] : null);
 
-    const candidateGrid=combined;
-    const plan=solve(candidateGrid, 300);
-    if(plan&&plan.length>0){
-      return {newRows:combined.slice(ns), plan};
-    }
+    newRows.push(
+      makeRow(0.45, prevRow).map((v, c) => (c < fill ? v : null))
+    );
   }
-  // fallback: just return random rows with no plan guarantee
-  const newRows=[];
-  for(let ri=0;ri<count;ri++){
-    const fill=ri<count-1?COLS:(6+Math.floor(Math.random()*(COLS-5)));
-    newRows.push(Array.from({length:COLS},(_,c)=>c<fill?rndInt():null));
-  }
-  return {newRows, plan:null};
+
+  return { newRows, plan: null };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -947,11 +965,19 @@ function addRows(){
 //  HINT
 // ═══════════════════════════════════════════════════════════════
 function toggleHint(){
-  if(hintActive){ hintActive=false; render(); setMsg('ヒントOFF',''); return; }
-
-  if(!solutionPlan.length){
-    replan();
+  if(hintActive){
+    hintActive=false;
+    render();
+    setMsg('ヒントOFF','');
+    return;
   }
+
+  // if(!solutionPlan.length){
+  //   replan();
+  // }
+  const plan = solve(grid, 1500);
+  solutionPlan = plan || [];
+
   hintActive=true;
   document.getElementById('hintBtn').classList.add('active');
 
@@ -1006,9 +1032,9 @@ function undoMove(){
 function checkWin(){
   if(isEmpty(grid)){ showOverlay('clear'); return; }
   // Stuck? (no moves and plan is empty)
-  
+
   const noMoves = !allMovesOnGrid(grid).length;
-  
+
   if(noMoves){
     replan();
     if(!solutionPlan.length){
@@ -1016,7 +1042,7 @@ function checkWin(){
       return;
     }
   }
-  
+
   // if(!allMovesOnGrid(grid).length&&!solutionPlan.length){
     // Trigger replan just in case
     // replan();
@@ -1062,15 +1088,6 @@ function overlayAction(){
   document.getElementById('overlay').classList.remove('show');
   if(overlayMode==='clear') stage++;
   startStage();
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  REPLAN  (wraps solve, called after each move / add / undo)
-// ═══════════════════════════════════════════════════════════════
-function replan(){
-  if(isEmpty(grid)){ solutionPlan=[]; return; }
-  const plan=solve(grid, 500);
-  solutionPlan=plan||[];
 }
 
 // ═══════════════════════════════════════════════════════════════
